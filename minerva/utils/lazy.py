@@ -15,8 +15,9 @@ class LazyLoader(types.ModuleType):
     """
 
     # The lint error here is incorrect.
-    def __init__(self, name, local_name=None,
-                 parent_module_globals=globals(), warning=None):  # pylint: disable=super-on-old-class
+    def __init__(
+        self, name, local_name=None, parent_module_globals=globals(), warning=None
+    ):  # pylint: disable=super-on-old-class
         self._local_name = local_name if local_name else name
         self._parent_module_globals = parent_module_globals
         self._warning = warning
