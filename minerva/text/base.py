@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 
 import minerva as mine
 
@@ -21,13 +21,13 @@ class Token(BaseEntity):
         self,
         text: str,
         tok_index: int = -1,
-        sentence: BaseEntity = None,
+        parent: BaseEntity = None,
         char_index: int = -1,
-        language: str = None,
+        language: str = "en",
     ):
         super().__init__(text, char_index=char_index, language=language)
         self.tok_index: int = tok_index
-        self.sentence: Sentence = sentence
+        self.parent: Optional[BaseEntity] = parent
 
     def __len__(self):
         return len(self.text)
@@ -46,7 +46,7 @@ class Sentence(BaseEntity):
             tok_pos = 0 if len(self) == 0 else self.tokens[len(self) - 1].end_char_index
             tok_pos += processed_text.index(word)
             self.tokens.append(
-                Token(word, tok_index=len(self), sentence=self, char_index=tok_pos)
+                Token(word, tok_index=len(self), parent=self, char_index=tok_pos)
             )
             processed_text = text[tok_pos + len(word) :]
 
