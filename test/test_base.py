@@ -12,6 +12,11 @@ def sample_tokens():
     return ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "."]
 
 
+@pytest.fixture
+def sample_pos_tags():
+    return ["DT", "JJ", "NN", "NN", "VBZ", "IN", "DT", "JJ", "NN", "."]
+
+
 @pytest.fixture(scope="module")
 def lipsum_array():
     return [
@@ -92,3 +97,13 @@ def test_corpus(lipsum_array):
     assert len(c3) == len(c1) + len(c2)
     assert c3[0] == c1[0]
     assert c3[-1] == c2[-1]
+
+
+def test_tags(sample_text, sample_pos_tags):
+
+    s = mine.Sentence(sample_text)
+    for i, token in enumerate(s):
+        token["pos"] = mine.Annotation(sample_pos_tags[i])
+
+    annos = [anno.value for anno in s.get_annotation("pos")]
+    assert annos == sample_pos_tags
