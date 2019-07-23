@@ -7,6 +7,11 @@ def sample_text():
     return "The quick brown fox jumps over the lazy dog."
 
 
+@pytest.fixture
+def sample_tokens():
+    return ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "."]
+
+
 @pytest.fixture(scope="module")
 def lipsum_array():
     return [
@@ -30,19 +35,29 @@ def sentence(sample_text):
     return mine.Sentence(sample_text)
 
 
-def test_tokenization(sentence, sample_text):
+def test_tokenization(sentence, sample_text, sample_tokens):
     assert len(sentence) == 10
     assert sentence[0].text == "The"
 
-    last_token = sentence[len(sentence) - 1]
-    assert last_token.parent == sentence
-    assert last_token.text == "."
-    assert last_token.char_index == sample_text.index(".")
+    for i, token in enumerate(sentence):
+        assert token.parent == sentence
+        assert token.text == sample_tokens[i]
+        assert token.char_index == sample_text.index(sample_tokens[i])
 
     middle_token = sentence[4]
     assert middle_token.text == "jumps"
     assert middle_token.char_index == sample_text.index("jumps")
     assert middle_token.end_char_index == sample_text.index("jumps") + len("jumps")
+
+    assert sentence.token_at_char(0).text == "The"
+    assert sentence.token_at_char(2).text == "The"
+    assert sentence.token_at_char(23).text == "jumps"
+    assert sentence.token_at_char(35).text == "lazy"
+    assert sentence.token_at_char(38).text == "lazy"
+    assert sentence.token_at_char(len(sample_text) - 1).text == "."
+    assert not sentence.token_at_char(3)
+    assert not sentence.token_at_char(34)
+    assert not sentence.token_at_char(39)
 
 
 def test_document(lipsum_array, lipsum_txt):

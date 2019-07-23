@@ -21,7 +21,7 @@ class BaseTextualEntity(BaseEntity):
         super().__init__(text, language=language)
         self.index: int = index
         self.char_index: int = char_index
-        self.end_char_index: int = char_index + len(text) if char_index > 0 else -1
+        self.end_char_index: int = char_index + len(text) if char_index >= 0 else -1
 
     @abstractmethod
     def __str__(self):
@@ -67,6 +67,38 @@ class Sentence(BaseTextualEntity):
                 Token(word, index=len(self), parent=self, char_index=tok_pos)
             )
             processed_text = text[tok_pos + len(word) :]
+
+    def token_at_char(self, index: int) -> Optional[Token]:
+        """
+        Return the token at position `index`. Performed using binary search, hence runtime is $O(log(n))$.
+        If the there is no token at the given index (e.g. the index points to a whitespace), returns None.
+
+        :param index: a character position within the string
+        :return: the token at position `index`, or None if `index` points to a non-token character.
+        """
+
+        if index < 0 or index > len(self.text):
+            raise IndexError(
+                f"index {index} is too small/big for the sentence '{self.text}'"
+            )
+
+        token: Optional[Token] = None
+
+        left = 0
+        right = len(self) - 1
+
+        while left <= right:
+            middle = (left + right) // 2
+
+            if self[middle].char_index <= index <= self[middle].end_char_index - 1:
+                token = self[middle]
+                break
+            elif index < self[middle].char_index:
+                right = middle - 1
+            else:
+                left = middle + 1
+
+        return token
 
     def __getitem__(self, idx: int) -> Token:
         return self.tokens[idx]
