@@ -9,12 +9,12 @@ class Annotation(ABC):
         self, value: str, score: Optional[float] = None, **kwargs: Dict[str, Any]
     ):
         self.value: str = value
-        self.__annos = {}
+        self.__annos: Dict[str, Any] = {}
         for key, value in kwargs:
-            self[key] == value
+            self[key] = value
 
         if score:
-            self["score"] == score
+            self["score"] = score
 
     def __setitem__(self, key: str, value: Any) -> None:
 
@@ -36,28 +36,38 @@ class TokenSpan(Annotation):
     def __init__(
         self,
         value: str,
-        start: "Token",
-        end: "Token",
+        start_token: "Token",
+        end_token: "Token",
         score: Optional[float] = None,
         **kwargs,
     ):
         super().__init__(value, score)
-        super()["start"] = start.index
-        super()["end"] = end.index
+        self["start_token"] = start_token
+        self["end_token"] = end_token
         for key, value in kwargs:
-            super()[key] == value
+            self[key] = value
 
     @property
-    def end(self) -> "Token":
-        return self["end"]
+    def start_token(self) -> "Token":
+        return self["start_token"]
 
     @property
-    def start(self) -> "Token":
-        return self["start"]
+    def end_token(self) -> "Token":
+        return self["end_token"]
+
+    @property
+    def start_index(self) -> int:
+        return self.start_token.index
+
+    @property
+    def end_index(self) -> int:
+        return self.end_token.index
 
     @property
     def text(self) -> str:
-        return self.start.parent[self.start.char_index, self.start.end_char_index]
+        return self.start_token.parent.text[
+            self.start_token.char_index : self.end_token.end_char_index
+        ]
 
 
 class BaseEntity(ABC):
@@ -145,7 +155,7 @@ class Sentence(BaseTextualEntity):
         **kwargs,
     ) -> None:
         if begin and end:
-            ann = TokenSpan(value, self[begin], self[end], score, **kwargs)
+            ann = TokenSpan(value, self[begin], self[end - 1], score, **kwargs)
             for token in self[begin:end]:
                 token[key] = ann
 
@@ -165,7 +175,7 @@ class Sentence(BaseTextualEntity):
             token = self[i]
             if key in token:
                 if isinstance(token[key], TokenSpan):
-                    i = token[key].end.index
+                    i = token[key].end_index
 
                 anns.append(token[key])
             i += 1

@@ -2,9 +2,16 @@ import minerva as mine
 import pytest
 
 
-@pytest.fixture(scope="module")
-def sample_text():
-    return "The quick brown fox jumps over the lazy dog."
+@pytest.fixture(
+    scope="module",
+    params=[
+        "The quick brown fox jumps over the lazy dog.",
+        "The quick brown fox\tjumps over the lazy dog.",
+        "The quick brown fox   jumps \n   over\t   the lazy dog\t     .",
+    ],
+)
+def sample_text(request):
+    return request.param
 
 
 @pytest.fixture
@@ -54,15 +61,18 @@ def test_tokenization(sentence, sample_text, sample_tokens):
     assert middle_token.char_index == sample_text.index("jumps")
     assert middle_token.end_char_index == sample_text.index("jumps") + len("jumps")
 
-    assert sentence.token_at_char(0).text == "The"
-    assert sentence.token_at_char(2).text == "The"
-    assert sentence.token_at_char(23).text == "jumps"
-    assert sentence.token_at_char(35).text == "lazy"
-    assert sentence.token_at_char(38).text == "lazy"
+    assert sentence.token_at_char(sample_text.index("The")).text == "The"
+    assert sentence.token_at_char(sample_text.index("The") + 2).text == "The"
+    assert sentence.token_at_char(sample_text.index("jumps") + 1).text == "jumps"
+    assert sentence.token_at_char(sample_text.index("lazy")).text == "lazy"
+    assert (
+        sentence.token_at_char(sample_text.index("lazy") + len("lazy") - 1).text
+        == "lazy"
+    )
     assert sentence.token_at_char(len(sample_text) - 1).text == "."
     assert not sentence.token_at_char(3)
-    assert not sentence.token_at_char(34)
-    assert not sentence.token_at_char(39)
+    assert not (sentence.token_at_char(sample_text.index("the") + len("the")))
+    assert not (sentence.token_at_char(sample_text.index("lazy") + len("lazy")))
 
 
 def test_document(lipsum_array, lipsum_txt):
@@ -99,11 +109,27 @@ def test_corpus(lipsum_array):
     assert c3[-1] == c2[-1]
 
 
-def test_tags(sample_text, sample_pos_tags):
+def test_tags(sentence, sample_pos_tags):
 
-    s = mine.Sentence(sample_text)
-    for i, token in enumerate(s):
+    for i, token in enumerate(sentence):
         token["pos"] = mine.Annotation(sample_pos_tags[i])
 
-    annos = [anno.value for anno in s.get_annotation("pos")]
+    annos = [anno.value for anno in sentence.get_annotation("pos")]
     assert annos == sample_pos_tags
+
+    sentence.add_annotation("test-key", "test-value-1", begin=1, end=4, score=0.5)
+    for t in sentence[1:4]:
+        assert t["test-key"].value == "test-value-1"
+
+    with pytest.raises(IndexError):
+        assert sentence.add_annotation(
+            "test-key", "test-value-2", begin=8, end=11, score=1
+        )
+
+    sentence.add_annotation("test-key", "test-value-2", begin=7, end=9, score=1)
+    for t in sentence[7:9]:
+        assert t["test-key"].value == "test-value-2"
+
+    spans = sentence.get_annotation("test-key")
+    assert spans[0].text == "quick brown fox"
+    assert spans[1].text == "lazy dog"
