@@ -8,6 +8,17 @@ class Annotation(ABC):
     def __init__(
         self, value: str, score: Optional[float] = None, **kwargs: Dict[str, Any]
     ):
+        """
+        A basic annotation. It must hold at least a value (e.g. a part-of-speech tag). Optionally, it can
+        have a confidence score. Any other keyword parameter is added to the annotation internal dictionary.
+
+        For example, you can call `Annotation('Noun')`, or `Annotation('ontology-object', score=0.75,
+        url='http://ontology.org/object')`
+
+        :param value: the value of the annotation
+        :param score: an optional confidence score
+        :param kwargs: additional information to store into the annotation
+        """
         self.value: str = value
         self.__annos: Dict[str, Any] = {}
         for key, value in kwargs:
@@ -17,6 +28,12 @@ class Annotation(ABC):
             self["score"] = score
 
     def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Sets/updates an annotation field with a new value.
+
+        :param key: the field to set/update.
+        :param value: the new value of the field.
+        """
 
         if key == "value":
             raise ValueError(
