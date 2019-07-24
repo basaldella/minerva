@@ -14,12 +14,12 @@ def sample_text(request):
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_tokens():
     return ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "."]
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_pos_tags():
     return ["DT", "JJ", "NN", "NN", "VBZ", "IN", "DT", "JJ", "NN", "."]
 
@@ -33,7 +33,7 @@ def lipsum_array():
     ]
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def lipsum_txt():
     return (
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
