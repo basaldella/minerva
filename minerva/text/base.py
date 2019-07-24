@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Iterable, Optional, Union
+from typing import Any, Dict, List, Iterable, Optional, overload, Union
 
 import minerva as mine
 
@@ -49,11 +49,13 @@ class TokenSpan(Annotation):
 
     @property
     def start_token(self) -> "Token":
-        return self["start_token"]
+        t: "Token" = self["start_token"]
+        return t
 
     @property
     def end_token(self) -> "Token":
-        return self["end_token"]
+        t: "Token" = self["end_token"]
+        return t
 
     @property
     def start_index(self) -> int:
@@ -65,9 +67,15 @@ class TokenSpan(Annotation):
 
     @property
     def text(self) -> str:
-        return self.start_token.parent.text[
-            self.start_token.char_index : self.end_token.end_char_index
-        ]
+        if self.start_token.parent:
+            return self.start_token.parent.text[
+                self.start_token.char_index : self.end_token.end_char_index
+            ]
+
+        raise ValueError(
+            "This TokenSpan was probably not created from a sentence. You should always use \
+            `Sentence.add_annotation` for creating TokenSpans"
+        )
 
 
 class BaseEntity(ABC):
@@ -106,6 +114,9 @@ class Token(BaseTextualEntity):
     ):
         super().__init__(text, index=index, char_index=char_index, language=language)
         self.parent: Optional[BaseTextualEntity] = parent
+
+    def __contains__(self, item):
+        return item in self.labels.keys()
 
     def __setitem__(self, key: str, value: Any) -> None:
         self.labels[key] = value
@@ -151,7 +162,7 @@ class Sentence(BaseTextualEntity):
         value: str,
         begin: int = None,
         end: int = None,
-        score: int = None,
+        score: float = None,
         **kwargs,
     ) -> None:
         if begin and end:
@@ -219,10 +230,18 @@ class Sentence(BaseTextualEntity):
 
         return token
 
+    @overload
     def __getitem__(self, idx: int) -> Token:
+        pass
+
+    @overload
+    def __getitem__(self, idx: slice) -> Iterable[Token]:
+        pass
+
+    def __getitem__(self, idx):
         return self.tokens[idx]
 
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterable[Token]:
         return iter(self.tokens)
 
     def __len__(self) -> int:

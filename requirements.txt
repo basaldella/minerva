@@ -1,4 +1,4 @@
 black==19.3b0
-mypy==0.720
+git+https://github.com/python/mypy.git
 nltk==3.4.4
 pre-commit==1.17.0

@@ -133,3 +133,6 @@ def test_tags(sentence, sample_pos_tags):
     spans = sentence.get_annotation("test-key")
     assert spans[0].text == "quick brown fox"
     assert spans[1].text == "lazy dog"
+
+    with pytest.raises(KeyError):
+        assert sentence.get_annotation("test-key-unknown")
