@@ -6,9 +6,9 @@ repos:
       language: system
       entry: black
       types: [python]
-    - id: mypy
-      name: mypy
-      language: system
-      entry: mypy
-      types: [python]
-      exclude: 'test/|setup.py'
+    #- id: mypy
+    #  name: mypy
+    #  language: system
+    #  entry: mypy
+    #  types: [python]
+    #  exclude: 'test/|setup.py'
