@@ -2,6 +2,38 @@ import minerva as mine
 import pytest
 
 
+@pytest.fixture
+def quotes_template():
+    return [
+        (
+            "''Lorem ipsum dolor sit amet, consectetur adipiscing elit\"",
+            [
+                "''",
+                "Lorem",
+                "ipsum",
+                "dolor",
+                "sit",
+                "amet",
+                ",",
+                "consectetur",
+                "adipiscing",
+                "elit",
+                '"',
+            ],
+        )
+    ]
+
+
+@pytest.fixture
+def contractions_template_en():
+    return [
+        ("I cannot do it.", ["I", "cannot", "do", "it", "."]),
+        ("Lemme do it.", ["Lemme", "do", "it", "."]),
+        ("Gimme that.", ["Gimme", "that", "."]),
+        ("I wanna do it.", ["I", "wanna", "do", "it", "."]),
+    ]
+
+
 @pytest.fixture(
     scope="module",
     params=[
@@ -136,3 +168,11 @@ def test_tags(sentence, sample_pos_tags):
 
     with pytest.raises(KeyError):
         assert sentence.get_annotation("test-key-unknown")
+
+
+def test_quotes_and_contraptions_en(quotes_template, contractions_template_en):
+
+    for sentence, tokens in quotes_template + contractions_template_en:
+        s = mine.Sentence(sentence)
+        for i in range(len(s)):
+            assert s[i].text == tokens[i]
