@@ -269,7 +269,7 @@ class Sentence(BaseTextualEntity):
         score: float = None,
         **kwargs,
     ) -> None:
-        if begin and end:
+        if begin is not None and end is not None:
             ann = TokenSpan(value, self[begin], self[end - 1], score, **kwargs)
             for token in self[begin:end]:
                 token[key] = ann
@@ -298,7 +298,7 @@ class Sentence(BaseTextualEntity):
         if len(anns) > 0:
             return anns
         else:
-            raise KeyError(f"{key} is not an annotation for this sentence.")
+            return None
 
     def token_at_char(self, index: int) -> Optional[Token]:
         """
