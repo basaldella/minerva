@@ -43,21 +43,49 @@ class Annotation(ABC):
             self.__annos[key] = value
 
     def __getitem__(self, item: str) -> Any:
+        """
+        Get a field value from the annotation.
+
+        :param item: the key of the field to retrieve.
+        :return: the annotation value.
+        """
         if item == "value":
             return self.value
         else:
-            return self.__annos[item]
+            if item in self.__annos:
+                return self.__annos[item]
+            else:
+                raise KeyError(f"{item} is not a valid annotation field.")
 
 
 class TokenSpan(Annotation):
+    """
+    An annotation over more than one token.
+    """
+
     def __init__(
         self,
         value: str,
         start_token: "Token",
-        end_token: "Token",
+        end_token: "Token" = None,
         score: Optional[float] = None,
         **kwargs,
     ):
+        """
+        Instantiates the multi-token annotation. If the annotation spans only one token, it can
+        be called omitting `end_token`. Additional keyword arguments will be stored in the annotation
+        dictionary.
+
+        :param value: the value of the annotation.
+        :param start_token: the first token of the span.
+        :param end_token: the last token on the span.
+        :param score: the score of the annotation.
+        :param kwargs: additional keyword arguments, to be stored within the annotation.
+        """
+
+        if not end_token:
+            end_token = start_token
+
         super().__init__(value, score)
         self["start_token"] = start_token
         self["end_token"] = end_token
@@ -66,24 +94,49 @@ class TokenSpan(Annotation):
 
     @property
     def start_token(self) -> "Token":
+        """
+        Retrieves the first token of the annotation.
+
+        :return: the first token of the annotation
+        """
         t: "Token" = self["start_token"]
         return t
 
     @property
     def end_token(self) -> "Token":
+        """
+        Retrieves the last token of the annotation.
+
+        :return: the last token of the annotation.
+        """
         t: "Token" = self["end_token"]
         return t
 
     @property
     def start_index(self) -> int:
+        """
+        Returns the index of the first token within its parent (e.g. a Sentence).
+
+        :return: a the index of the first token.
+        """
         return self.start_token.index
 
     @property
     def end_index(self) -> int:
+        """
+        Returns the index of the last token within its parent (e.g. a Sentence).
+
+        :return: a the index of the last token.
+        """
         return self.end_token.index
 
     @property
     def text(self) -> str:
+        """
+        Returns the text span covered by the annotation.
+
+        :return: the text span covered by the annotations.
+        """
         if self.start_token.parent:
             return self.start_token.parent.text[
                 self.start_token.char_index : self.end_token.end_char_index
@@ -96,28 +149,61 @@ class TokenSpan(Annotation):
 
 
 class BaseEntity(ABC):
+    """
+    A basic entity.
+    """
+
     def __init__(self, text: str, language: str = "en"):
+        """
+        Initializes the entity.
+
+        :param text: the text of the entity.
+        :param language: the language of the entity.
+        """
         self.text: str = text
         self.language: str = language
 
-    @abstractmethod
     def __str__(self) -> str:
+        """
+        The text of the entity, as passed to the constructor.
+
+        :return: the text of the entity
+        """
         return self.text
 
 
 class BaseTextualEntity(BaseEntity):
+    """
+    A basic textual entity, potentially part of other, bigger textual entities. For example, it could represent
+    a word, which may be part of a sentence, which may be part of a document; of it could represent a tweet, and so on.
+
+    As part of a bigger whole, it may have an index within its parent (e.g. it could be the 3rd sentence) and a
+    character index (e.g. it could be the word starting at character 45).
+    """
+
     def __init__(
-        self, text: str, index: int = -1, char_index: int = -1, language: str = "en"
+        self,
+        text: str,
+        index: int = -1,
+        char_index: int = -1,
+        language: str = "en",
+        parent: BaseEntity = None,
     ):
+        """
+        Creates the textual entity.
+
+        :param text: the text of the entity, as it appears in the original source.
+        :param index: the index of the entity (e.g. the third token of a sentence).
+        :param char_index: the character index of the entity (e.g. a token may appear at character 45).
+        :param language: the language of the entity.
+        :param parent: the parent entity.
+        """
         super().__init__(text, language=language)
         self.index: int = index
         self.char_index: int = char_index
         self.end_char_index: int = char_index + len(text) if char_index >= 0 else -1
         self.labels: Dict[str, Annotation] = {}
-
-    @abstractmethod
-    def __str__(self) -> str:
-        return self.text
+        self.parent: Optional[BaseEntity] = parent
 
 
 class Token(BaseTextualEntity):
@@ -129,8 +215,9 @@ class Token(BaseTextualEntity):
         char_index: int = -1,
         language: str = "en",
     ):
-        super().__init__(text, index=index, char_index=char_index, language=language)
-        self.parent: Optional[BaseTextualEntity] = parent
+        super().__init__(
+            text, index=index, char_index=char_index, language=language, parent=parent
+        )
 
     def __contains__(self, item):
         return item in self.labels.keys()
@@ -158,8 +245,8 @@ class Token(BaseTextualEntity):
 
 
 class Sentence(BaseTextualEntity):
-    def __init__(self, text: str, index: int = -1):
-        super().__init__(text, index=index)
+    def __init__(self, text: str, index: int = -1, parent: BaseEntity = None):
+        super().__init__(text, index=index, parent=parent)
         self.tokens: List[Token] = []
         self.annotations: Dict[str, Annotation] = {}
 
