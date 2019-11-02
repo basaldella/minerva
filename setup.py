@@ -20,7 +20,7 @@ REQUIRES_PYTHON = ">=3.6.0"
 VERSION = None
 
 # What packages are required for this module to be executed?
-REQUIRED = ["nltk==3.4.4"]
+REQUIRED = ["nltk==3.4.5"]
 
 # What packages are optional?
 EXTRAS = {
